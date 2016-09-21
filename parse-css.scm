@@ -20,27 +20,35 @@
 ;; Note that the returned data can contain quite a bit of unwanted whitespace,
 ;; so the data may need to be filtered even after
 (define (parse-css file-path)
-  (define char-set:formatting
-    (char-set #\newline #\tab))
 
+  ;; Returns a list with each selector (as defined by comma separation)
+  ;; as a string in a list, with non-semantic whitespace stripped
   (define (handle-selector-input selector)
-    (string-split
-      (string-delete char-set:formatting
-                     (car selector))
-      #\,))
+    (map (lambda (str)
+           (string-trim-both str char-set:whitespace))
+         (string-split (car selector)
+                       #\,)))
 
+  ;; Returns the body as a number of key-value pairs, where the first element
+  ;; is the key, and the rest are values.
+  ;; All non-sematic whitespace is stripped
   (define (handle-body-input body)
     (map (lambda (str)
-           (string-split str #\:))
-         ;; Delete empty strings, handles space-padding and trailing whitespace
+           (let ((key-value (string-split str #\:)))
+             ;; possibly change this to cons
+             (map (lambda (inner-str)
+                    (string-trim-both inner-str char-set:whitespace))
+                  key-value)))
+         ;; Delete empty strings,
+         ;; this is needed since there may be non semantic whitespace
+         ;; between the last element's semicolon and the end curly brace
          (filter-empty-str
-           (string-split
-             (string-delete char-set:formatting
-                            (car body))
-             #\;))))
+           (string-split (car body)
+                         #\;))))
 
   (let ((file (open-input-file file-path)))
     (let inner ((done '()))
+      ;; This builds upon the fact that file readers are destructive
       (let ((selector (read-delimited "{" file 'split))
             (body (read-delimited "}" file 'split)))
         (if (eof-object? (cdr selector))
