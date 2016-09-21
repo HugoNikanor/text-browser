@@ -6,6 +6,7 @@
 ;(load "world-object.scm")
 (load "render-object.scm")
 (load "render-tree.scm")
+(load "dimmensions.scm")
 
 (define (display-webpage-fragment html-file-path)
   (map handle-html (cdr (file-path->sxml html-file-path))))
@@ -48,7 +49,7 @@
                 (make-render-object
                   'string
                   node
-                  (cons (string-length node) 1)
+                  (make-dim (string-length node) 1)
                   '()))
               ;; else list
               (let ((content (car node)))
@@ -59,14 +60,14 @@
                      (make-render-object
                        'string-list
                        content
-                       (cons (string-length content)
+                       (make-dim (string-length content)
                              ;; TODO replace 80 with container width
                              (remainder string-length 80))
                        '())))
                   (else
                     (add-render-object
                       render-tree
-                      (make-render-object 'atom "" (cons 0 0) '()))))))
+                      (make-render-object 'atom "" (make-dim 0 0) '()))))))
 
             ;; Node / Branch
             ;; Note that body might quite often be empty
@@ -76,12 +77,8 @@
                                   (create-render-tree body))))
                 (display "it:")
                 (displayln inner-tree)
-                (let ((inner-dim (fold (lambda (dimension previous)
-                                         (cons (+ (car dimension)
-                                                  (car previous))
-                                               (+ (cdr dimension)
-                                                  (cdr previous))))
-                                       (cons 0 0)
+                (let ((inner-dim (fold dim+
+                                       (make-dim 0 0)
                                        (map get-render-dimensions inner-tree))))
                   (add-render-object
                     render-tree
@@ -94,12 +91,13 @@
                                         inner-tree
                                         (case tag
                                           ((div)
-                                           (cons (+ (car inner-dim) 2)
-                                                 (+ (cdr inner-dim) 2)))
+                                           (dim+ inner-dim
+                                                 (make-dim 2 2)))
                                           (else inner-dim))
                                         '())))))))
         (make-empty-render-tree)
         data))
+
 
 (define (handle-html data style)
   (if (null? data)
