@@ -53,4 +53,14 @@
               done
               (inner done))))))))
 
-; (filter-empty-str(string-split attributes #\space))
+;; select should be a list of strings, on some form
+;; css should be on the form returned from parse-css
+;; TODO this is currently basicly horrible, rewrite
+(define (get-appropriate-css selector css)
+  (call/cc (lambda (return)
+             (for-each (lambda (key-value)
+                         (when (equal? (car key-value)
+                                       selector)
+                           (return (cdr key-value))))
+                       css)
+             (return '()))))
