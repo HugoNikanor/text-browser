@@ -1,17 +1,6 @@
 (use-modules (ice-9 rdelim))
 
-(define (displayln msg)
-  (display msg)
-  (newline))
-
-(define (writeln msg)
-  (write msg)
-  (newline))
-
-(define (filter-empty-str strings)
-  (filter (lambda (str)
-            (not (equal? str "")))
-          strings))
+(load "utils.scm")
 
 ;; Returns an association list where the car is a list of the selectors,
 ;; and the cdr is an assoc list where each elements car is the "selector"(?)

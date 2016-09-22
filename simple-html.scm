@@ -7,6 +7,7 @@
 (load "render-object.scm")
 (load "render-tree.scm")
 (load "dimmensions.scm")
+(load "utils.scm")
 
 (define (display-webpage-fragment html-file-path)
   (map handle-html (cdr (file-path->sxml html-file-path))))
