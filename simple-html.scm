@@ -9,20 +9,20 @@
 (load "dimmensions.scm")
 (load "utils.scm")
 
-(define (display-webpage-fragment html-file-path)
-  (map handle-html (cdr (file-path->sxml html-file-path))))
-
 (define (file-path->sxml file-path)
   (xml->sxml
     (read-string
       (open-input-file file-path))
     #:trim-whitespace? #t))
 
+;; Takes a tag on the form:
+;; (tag-name [(@ (atr-key atr-val))] & body)
+;; And returns:
+;; ((atr-key atr-val))
 (define (get-attributes tag)
   (cond
-    ((null? tag)
-     '())
-    ((null? (cdr tag))
+    ((or (null? tag)
+         (null? (cdr tag)))
      '())
     ((eqv? (caadr tag)
            '@)
@@ -30,11 +30,7 @@
     (else
       '())))
 
-;; TODO change map to fold
-;; TODO write fold logic
-
-;(fold (lambda (page-state next-page-element)
-
+;; Returns #t if node is a list and the car is a symbol
 (define (html-tag? node)
   (and (list? node)
        (not (null? node))
@@ -65,6 +61,7 @@
                              ;; TODO replace 80 with container width
                              (remainder string-length 80))
                        '())))
+                  ;; Else unknown
                   (else
                     (add-render-object
                       render-tree
@@ -99,6 +96,10 @@
         (make-empty-render-tree)
         data))
 
+
+;; These should probably be succeeded by something else
+(define (display-webpage-fragment html-file-path)
+  (map handle-html (cdr (file-path->sxml html-file-path))))
 
 (define (handle-html data style)
   (if (null? data)
