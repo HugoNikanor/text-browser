@@ -4,11 +4,11 @@
 ;  (style (bg-color blue)
 ;         (color red)))
 
-(define (make-render-object tag content dimensions style)
+(define (make-render-object tag object dimensions style)
   ;`((content . ,content)
   ;    (dimensions . ,dimensions)
   ;    (style . ,style)))
-  (list tag content dimensions style))
+  (list tag object dimensions style))
 
 (define (get-render-tag render-object)
   ;(assoc-ref render-object 'content))

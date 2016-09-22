@@ -3,9 +3,9 @@
              (texinfo string-utils))
 
 (load "parse-css.scm")
-;(load "world-object.scm")
+(load "world-object.scm")
 (load "render-object.scm")
-(load "render-tree.scm")
+;(load "render-tree.scm")
 (load "dimensions.scm")
 (load "utils.scm")
 
@@ -39,15 +39,18 @@
 (define (create-render-tree-helper html-path default-css-path)
   (create-render-tree
     (cdr (file-path->sxml html-path))
-    (parse-css default-css-path)))
+    (parse-css default-css-path)
+    (make-world-object)))
 
-(define (create-render-tree dom-tree style-sheet)
-  (fold (lambda (node render-tree)
+;; actually returns a world object, containing the render tree
+(define (create-render-tree dom-tree style-sheet world-object)
+  ;(fold (lambda (node render-tree)
+  (fold (lambda (node world-object)
           (if (not (html-tag? node))
             ;; Atom / Leaf
             (if (string? node)
               (add-render-object
-                render-tree
+                world-object
                 (make-render-object
                   'string
                   node
@@ -58,50 +61,46 @@
                 (cond
                   ((string? content)
                    (add-render-object
-                     render-tree
+                     world-object
                      (make-render-object
                        'string-list
                        content
                        (make-dim (string-length content)
-                             ;; TODO replace 80 with container width
-                             (remainder string-length 80))
+                                 ;; TODO replace 80 with container width
+                                 (remainder string-length 80))
                        '())))
                   ;; Else unknown
                   (else
                     (add-render-object
-                      render-tree
+                      world-object
                       (make-render-object 'atom "" (make-dim 0 0) '()))))))
 
             ;; Node / Branch
             ;; Note that body might quite often be empty
             (let ((tag (car node))
                   (body (cdr node)))
-              (let ((inner-tree (get-render-objects
-                                  (create-render-tree body style-sheet))))
-                (display "it:")
-                (displayln inner-tree)
-                (let ((inner-dim (fold dim+
-                                       (make-dim 0 0)
-                                       (map get-render-dimensions inner-tree))))
+              (let* ((inner-world (create-render-tree
+                                    body
+                                    style-sheet
+                                    (add-ancestor world-object node)))
+                     (inner-dim (get-world-size inner-world)))
+                (let ((outer-dim (dim+ inner-dim
+                                      ;; This should also depend on style (padding)
+                                      (case tag
+                                        ((div)
+                                         (make-dim 2 2))
+                                        (else
+                                          (make-dim 0 0))))))
                   (add-render-object
-                    render-tree
-                    ;; THIS IS WHERE MARGINS, CSS/DISPLAY, PADDINGS,
-                    ;; AND BORDERS SHOULD BE CALCULATED
-                    ;;
-                    ;; TODO this is for div, do different things
-                    ;; depending on the object type
-                    (make-render-object
-                      tag
-                      inner-tree
-                      (case tag
-                        ((div)
-                         (dim+ inner-dim
-                               (make-dim 2 2)))
-                        (else inner-dim))
-                      ;; TODO fix actual translation from tag to css selector
-                      (get-appropriate-css (list (symbol->string tag))
-                                           style-sheet))))))))
-        (make-empty-render-tree)
+                    world-object
+                    (make-render-object tag
+                                        '()
+                                        outer-dim
+                                        (get-appropriate-css
+                                          (list (symbol->string tag))
+                                                style-sheet)))
+                  (merge-worlds world-object inner-world))))))
+        world-object
         dom-tree))
 
 
