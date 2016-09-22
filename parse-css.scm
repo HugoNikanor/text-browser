@@ -22,18 +22,21 @@
   ;; is the key, and the rest are values.
   ;; All non-sematic whitespace is stripped
   (define (handle-body-input body)
-    (map (lambda (str)
-           (let ((key-value (string-split str #\:)))
-             ;; possibly change this to cons
-             (map (lambda (inner-str)
-                    (string-trim-both inner-str char-set:whitespace))
-                  key-value)))
-         ;; Delete empty strings,
-         ;; this is needed since there may be non semantic whitespace
-         ;; between the last element's semicolon and the end curly brace
-         (filter-empty-str
-           (string-split (car body)
-                         #\;))))
+    ;; Removes the whitespace caused by the space between the last
+    ;; semicolon and the end curly brace
+    (filter (lambda (key-value)
+              (not (and (= (length key-value) 1)
+                        (equal? (car key-value) ""))))
+            (map (lambda (str)
+                   (let ((key-value (string-split str #\:)))
+                     ;; possibly change this to cons
+                     (map (lambda (inner-str)
+                            (string-trim-both inner-str char-set:whitespace))
+                          key-value)))
+                 ;; Delete empty strings, this is needed since there
+                 ;; may be non semantic whitespace between the last
+                 ;; element's semicolon and the end curly brace
+                 (string-split (car body) #\;))))
 
   (let ((file (open-input-file file-path)))
     (let inner ((done '()))
