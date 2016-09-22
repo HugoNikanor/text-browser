@@ -6,7 +6,7 @@
 ;(load "world-object.scm")
 (load "render-object.scm")
 (load "render-tree.scm")
-(load "dimmensions.scm")
+(load "dimensions.scm")
 (load "utils.scm")
 
 (define (file-path->sxml file-path)
@@ -36,7 +36,12 @@
        (not (null? node))
        (symbol? (car node))))
 
-(define (create-render-tree data)
+(define (create-render-tree-helper html-path default-css-path)
+  (create-render-tree
+    (cdr (file-path->sxml html-path))
+    (parse-css default-css-path)))
+
+(define (create-render-tree dom-tree style-sheet)
   (fold (lambda (node render-tree)
           (if (not (html-tag? node))
             ;; Atom / Leaf
@@ -72,7 +77,7 @@
             (let ((tag (car node))
                   (body (cdr node)))
               (let ((inner-tree (get-render-objects
-                                  (create-render-tree body))))
+                                  (create-render-tree body style-sheet))))
                 (display "it:")
                 (displayln inner-tree)
                 (let ((inner-dim (fold dim+
@@ -85,16 +90,19 @@
                     ;;
                     ;; TODO this is for div, do different things
                     ;; depending on the object type
-                    (make-render-object tag
-                                        inner-tree
-                                        (case tag
-                                          ((div)
-                                           (dim+ inner-dim
-                                                 (make-dim 2 2)))
-                                          (else inner-dim))
-                                        '())))))))
+                    (make-render-object
+                      tag
+                      inner-tree
+                      (case tag
+                        ((div)
+                         (dim+ inner-dim
+                               (make-dim 2 2)))
+                        (else inner-dim))
+                      ;; TODO fix actual translation from tag to css selector
+                      (get-appropriate-css (list (symbol->string tag))
+                                           style-sheet))))))))
         (make-empty-render-tree)
-        data))
+        dom-tree))
 
 
 ;; These should probably be succeeded by something else
